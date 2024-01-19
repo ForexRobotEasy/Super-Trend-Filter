@@ -1,0 +1,133 @@
+mql5
+//+------------------------------------------------------------------+
+//|                     Super Trend Filter                            |
+//|             Developer's Site: forexroboteasy.com                  |
+//|                Development: Forex Robot Easy Team                 |
+//+------------------------------------------------------------------+
+
+// Define input parameters
+input int atrPeriod = 10;              // ATR period
+input double multiplier = 2.0;         // Multiplier for ATR
+input int maPeriod = 20;               // Moving average period
+input int shift = 1;                   // Shift value for indicator
+input ENUM_APPLIED_PRICE appliedPrice = PRICE_CLOSE;  // Applied price for indicators
+
+// Define global variables
+double atrBuffer[];                    // ATR buffer
+double trendBuffer[];                  // Trend buffer
+double maBuffer[];                     // Moving average buffer
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Set indicator buffers
+    SetIndexBuffer(0, atrBuffer);
+    SetIndexBuffer(1, trendBuffer);
+    SetIndexBuffer(2, maBuffer);
+
+    // Set indicator labels
+    IndicatorSetString(INDICATOR_SHORTNAME, 'Super Trend Filter');
+
+    // Set indicator parameters
+    IndicatorSetInteger(INDICATOR_DIGITS, _Digits);
+
+    // Return initialization result
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total, const int prev_calculated, const datetime &time[], const double &open[], const double &high[], const double &low[], const double &close[], const long &tick_volume[], const long &volume[], const int &spread[])
+{
+    // Calculate ATR
+    ArraySetAsSeries(atrBuffer, true);
+    iATR(_Symbol, _Period, atrPeriod, atrBuffer);
+
+    // Calculate moving average
+    ArraySetAsSeries(maBuffer, true);
+    iMA(_Symbol, _Period, maPeriod, 0, MODE_SMA, appliedPrice, maBuffer);
+
+    // Calculate trend
+    ArraySetAsSeries(trendBuffer, true);
+    for(int i = shift; i < rates_total; i++)
+    {
+        trendBuffer[i] = maBuffer[i] + (multiplier * atrBuffer[i]);
+    }
+
+    // Return calculation result
+    return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+//| Custom trading function                                          |
+//+------------------------------------------------------------------+
+void Trade()
+{
+    // Get the current trend
+    double currentTrend = trendBuffer[_Shift];
+
+    // Get the current price
+    double currentPrice = Close[_Shift];
+
+    // Check for potential entry and exit points
+    if(currentPrice > currentTrend)
+    {
+        // Place a buy order
+        // ...
+    }
+    else if(currentPrice < currentTrend)
+    {
+        // Place a sell order
+        // ...
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Initialize the Super Trend Filter indicator
+    if(!IndicatorCreate(0, INDICATOR_NAME, INDICATOR_DATA))
+    {
+        Print('Failed to initialize the Super Trend Filter indicator!');
+        return(INIT_FAILED);
+    }
+
+    // Set up the visual interface
+    ChartIndicatorAdd(0, 0, INDICATOR_NAME);
+    ChartSetInteger(0, CHART_COMMENT, true);
+
+    // Return initialization result
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+    // Remove the Super Trend Filter indicator
+    IndicatorRelease(0);
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+    // Check for new trading opportunities
+    Trade();
+}
+
+//+------------------------------------------------------------------+
+//| Expert start function                                            |
+//+------------------------------------------------------------------+
+void OnStart()
+{
+    // Check for new trading opportunities
+    Trade();
+}
